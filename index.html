@@ -243,7 +243,7 @@
 
     .game-info {
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       width: 100%;
     }
 
@@ -261,11 +261,39 @@
       text-shadow: 1px 2px 4px rgba(0,0,0,0.3);
     }
 
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 8px 0;
+      width: 210px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 7px 6px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: #333;
+      border-radius: 10px;
+    }
+
     .dice-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin: 10px 0;
+      margin: 8px 0;
       justify-items: center;
     }
 
@@ -316,6 +344,20 @@
       border-color: #aaa;
     }
 
+    /* Manual mode: editable dice */
+    .die.editable {
+      border: 3px dashed var(--accent);
+      cursor: pointer;
+    }
+
+    .die.editable:active {
+      transform: scale(0.93);
+    }
+
+    .die.manual-confirmed {
+      border: 3px solid #4caf50;
+    }
+
     .pip {
       width: 13px;
       height: 13px;
@@ -343,7 +385,7 @@
     }
 
     .roll-section {
-      margin-top: 10px;
+      margin-top: 8px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -381,6 +423,44 @@
       transform: none;
     }
 
+    .btn-confirm {
+      width: 180px;
+      padding: 14px 0;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #4caf50 0%, #388e3c 100%);
+      color: white;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-confirm:active {
+      transform: scale(0.96);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .btn-edit-dice {
+      width: 180px;
+      padding: 10px 0;
+      border: none;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      color: var(--text-white);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-edit-dice:active {
+      background: rgba(255,255,255,0.25);
+    }
+
     .rolls-remaining {
       color: rgba(255,255,255,0.7);
       font-size: 14px;
@@ -391,7 +471,7 @@
     .turn-hint {
       color: rgba(255,255,255,0.5);
       font-size: 12px;
-      margin-top: 16px;
+      margin-top: 12px;
       text-align: center;
       font-style: italic;
       line-height: 1.4;
@@ -445,14 +525,13 @@
       vertical-align: middle;
     }
 
-    /* Category name column */
     .scorecard-table .cat-col {
       text-align: left;
       padding-left: 8px;
       font-weight: 600;
       background: var(--card-bg);
-      width: 170px;
-      min-width: 170px;
+      width: 180px;
+      min-width: 180px;
     }
 
     .scorecard-table .cat-icon {
@@ -464,7 +543,6 @@
       vertical-align: middle;
     }
 
-    /* Player header cells */
     .scorecard-table th.player-header {
       background: var(--bg-light);
       color: var(--text-white);
@@ -487,7 +565,6 @@
       padding-left: 8px;
     }
 
-    /* Section header rows */
     .section-header td {
       background: var(--section-bg);
       font-weight: 800;
@@ -496,7 +573,6 @@
       letter-spacing: 1px;
     }
 
-    /* Summary rows */
     .summary-row td {
       background: var(--summary-bg);
       font-weight: 700;
@@ -527,7 +603,6 @@
       background: #fff9c4;
     }
 
-    /* Score cells */
     .score-cell {
       background: var(--card-bg);
       font-weight: 600;
@@ -702,9 +777,16 @@
       <div class="round-display" id="round-display">Runde 1 / 13</div>
       <div class="current-player-name" id="current-player-name">-</div>
     </div>
+    <!-- Mode Toggle -->
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-digital" data-mode="digital">Digitale Wuerfel</button>
+      <button class="mode-btn" id="mode-manual" data-mode="manual">Echte Wuerfel</button>
+    </div>
     <div class="dice-grid" id="dice-grid"></div>
-    <div class="roll-section">
+    <div class="roll-section" id="roll-section">
       <button class="btn-roll" id="btn-roll">WUERFELN</button>
+      <button class="btn-confirm" id="btn-confirm" style="display:none">EINTRAGEN</button>
+      <button class="btn-edit-dice" id="btn-edit-dice" style="display:none">Wuerfel aendern</button>
       <div class="rolls-remaining" id="rolls-remaining"></div>
     </div>
     <div class="turn-hint" id="turn-hint"></div>
@@ -744,8 +826,8 @@ const UPPER_CATS = [
 ];
 
 const LOWER_CATS = [
-  { key: 'einPaar',        name: '1 Paar' },
-  { key: 'zweiPaar',       name: '2 Paar' },
+  { key: 'einPaar',        name: '1 Paar (= 10)' },
+  { key: 'zweiPaar',       name: '2 Paar (= 20)' },
   { key: 'dreiGleiche',    name: 'Drei Gleiche' },
   { key: 'vierGleiche',    name: 'Vier Gleiche' },
   { key: 'vollesHaus',     name: 'Volles Haus' },
@@ -756,21 +838,23 @@ const LOWER_CATS = [
 ];
 
 const ALL_CATS = [...UPPER_CATS.map(c => c.key), ...LOWER_CATS.map(c => c.key)];
-const TOTAL_ROUNDS = 13; // 13 categories = 13 rounds
+const TOTAL_ROUNDS = 13;
 
 // ===== Game State =====
 let game = {
-  players: [],          // [{ name, scores: { cat_key: number|null } }]
+  players: [],
   currentPlayer: 0,
   dice: [0, 0, 0, 0, 0],
   held: [false, false, false, false, false],
   rollsLeft: 3,
-  hasRolled: false,     // has the current player rolled at least once this turn?
-  isRolling: false,     // animation in progress?
+  hasRolled: false,
+  isRolling: false,
   gameOver: false,
+  manualMode: false,       // true = echte Wuerfel, false = digitale Wuerfel
+  manualConfirmed: false,  // true = manual dice values confirmed, ready to pick category
 };
 
-// ===== Pip Positions (percentage-based) =====
+// ===== Pip Positions =====
 const PIP_POSITIONS = {
   1: [{ top: '50%', left: '50%' }],
   2: [{ top: '25%', left: '75%' }, { top: '75%', left: '25%' }],
@@ -799,7 +883,7 @@ function calcScore(cat, dice) {
 
     case 'einPaar': {
       for (let v = 6; v >= 1; v--) {
-        if (counts[v - 1] >= 2) return v * 2;
+        if (counts[v - 1] >= 2) return 10;
       }
       return 0;
     }
@@ -809,7 +893,7 @@ function calcScore(cat, dice) {
       for (let v = 6; v >= 1; v--) {
         if (counts[v - 1] >= 2) pairs.push(v);
       }
-      return pairs.length >= 2 ? pairs[0] * 2 + pairs[1] * 2 : 0;
+      return pairs.length >= 2 ? 20 : 0;
     }
 
     case 'dreiGleiche': {
@@ -906,9 +990,8 @@ function initSetup() {
   const container = document.getElementById('player-inputs');
   container.innerHTML = '';
 
-  const defaultNames = ['Spieler 1', 'Spieler 2'];
   if (!window._setupPlayers) {
-    window._setupPlayers = [...defaultNames];
+    window._setupPlayers = ['Spieler 1', 'Spieler 2'];
   }
 
   window._setupPlayers.forEach((name, i) => {
@@ -962,10 +1045,7 @@ document.getElementById('btn-start-game').addEventListener('click', () => {
 // ===== Game Initialization =====
 function startGame(playerNames) {
   game = {
-    players: playerNames.map(name => ({
-      name,
-      scores: {},
-    })),
+    players: playerNames.map(name => ({ name, scores: {} })),
     currentPlayer: 0,
     dice: [0, 0, 0, 0, 0],
     held: [false, false, false, false, false],
@@ -973,18 +1053,49 @@ function startGame(playerNames) {
     hasRolled: false,
     isRolling: false,
     gameOver: false,
+    manualMode: false,
+    manualConfirmed: false,
   };
 
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('game-screen').style.display = 'flex';
   document.getElementById('game-over-screen').style.display = 'none';
 
+  updateModeToggle();
   buildDice();
   buildScorecard();
   renderAll();
 }
 
-// ===== Dice Rendering =====
+// ===== Mode Toggle =====
+function setMode(manual) {
+  game.manualMode = manual;
+  // Reset current turn state
+  game.hasRolled = false;
+  game.manualConfirmed = false;
+  game.held = [false, false, false, false, false];
+  game.rollsLeft = 3;
+
+  if (manual) {
+    game.dice = [1, 1, 1, 1, 1];
+  } else {
+    game.dice = [0, 0, 0, 0, 0];
+  }
+
+  updateModeToggle();
+  buildDice();
+  renderAll();
+}
+
+function updateModeToggle() {
+  document.getElementById('mode-digital').classList.toggle('active', !game.manualMode);
+  document.getElementById('mode-manual').classList.toggle('active', game.manualMode);
+}
+
+document.getElementById('mode-digital').addEventListener('click', () => setMode(false));
+document.getElementById('mode-manual').addEventListener('click', () => setMode(true));
+
+// ===== Dice Building & Rendering =====
 function buildDice() {
   const grid = document.getElementById('dice-grid');
   grid.innerHTML = '';
@@ -992,11 +1103,20 @@ function buildDice() {
     const wrapper = document.createElement('div');
     wrapper.className = 'die-wrapper';
     wrapper.dataset.index = i;
-    wrapper.innerHTML = `
-      <div class="die blank" data-index="${i}"></div>
-      <span class="hold-label">HALTEN</span>
-    `;
-    wrapper.addEventListener('click', () => toggleHold(i));
+
+    if (game.manualMode) {
+      wrapper.innerHTML = `
+        <div class="die editable" data-index="${i}"></div>
+        <span class="hold-label" style="color: var(--accent);">antippen</span>
+      `;
+      wrapper.addEventListener('click', () => cycleDieValue(i));
+    } else {
+      wrapper.innerHTML = `
+        <div class="die blank" data-index="${i}"></div>
+        <span class="hold-label">HALTEN</span>
+      `;
+      wrapper.addEventListener('click', () => toggleHold(i));
+    }
     grid.appendChild(wrapper);
   }
 }
@@ -1006,47 +1126,100 @@ function renderDice() {
   wrappers.forEach((w, i) => {
     const die = w.querySelector('.die');
     const val = game.dice[i];
-    const isHeld = game.held[i];
 
-    w.classList.toggle('held', isHeld);
+    if (game.manualMode) {
+      // Manual mode: show current editable value
+      die.innerHTML = '';
+      die.className = game.manualConfirmed ? 'die manual-confirmed' : 'die editable';
 
-    // Clear pips
-    die.innerHTML = '';
+      const positions = PIP_POSITIONS[val] || [];
+      positions.forEach(pos => {
+        const pip = document.createElement('div');
+        pip.className = 'pip';
+        pip.style.top = pos.top;
+        pip.style.left = pos.left;
+        die.appendChild(pip);
+      });
 
-    if (!game.hasRolled && val === 0) {
-      die.classList.add('blank');
-      return;
+      // Update hold label
+      const label = w.querySelector('.hold-label');
+      if (label) {
+        if (game.manualConfirmed) {
+          label.style.color = '#4caf50';
+          label.textContent = 'fest';
+        } else {
+          label.style.color = 'var(--accent)';
+          label.textContent = 'antippen';
+        }
+      }
+    } else {
+      // Digital mode
+      const isHeld = game.held[i];
+      w.classList.toggle('held', isHeld);
+
+      die.innerHTML = '';
+
+      if (!game.hasRolled && val === 0) {
+        die.classList.add('blank');
+        return;
+      }
+
+      die.classList.remove('blank');
+
+      const positions = PIP_POSITIONS[val] || [];
+      positions.forEach(pos => {
+        const pip = document.createElement('div');
+        pip.className = 'pip';
+        pip.style.top = pos.top;
+        pip.style.left = pos.left;
+        die.appendChild(pip);
+      });
     }
-
-    die.classList.remove('blank');
-
-    // Add pips
-    const positions = PIP_POSITIONS[val] || [];
-    positions.forEach(pos => {
-      const pip = document.createElement('div');
-      pip.className = 'pip';
-      pip.style.top = pos.top;
-      pip.style.left = pos.left;
-      die.appendChild(pip);
-    });
   });
 }
 
+// ===== Manual Mode: Cycle Die Value =====
+function cycleDieValue(index) {
+  if (game.manualConfirmed || game.gameOver) return;
+  game.dice[index] = (game.dice[index] % 6) + 1;
+  renderDice();
+}
+
+// ===== Manual Mode: Confirm Values =====
+function confirmManualDice() {
+  if (game.gameOver) return;
+  game.manualConfirmed = true;
+  game.hasRolled = true;
+  renderAll();
+}
+
+// ===== Manual Mode: Edit Dice Again =====
+function editManualDice() {
+  game.manualConfirmed = false;
+  game.hasRolled = false;
+  renderAll();
+}
+
+document.getElementById('btn-confirm').addEventListener('click', confirmManualDice);
+document.getElementById('btn-edit-dice').addEventListener('click', editManualDice);
+
+// ===== Digital Mode: Toggle Hold =====
 function toggleHold(index) {
+  if (game.manualMode) return;
   if (!game.hasRolled || game.rollsLeft === 0 || game.isRolling) return;
   game.held[index] = !game.held[index];
   renderDice();
 }
 
-// ===== Roll Dice =====
+// ===== Digital Mode: Roll Dice =====
 function rollDice() {
+  if (game.manualMode) return;
   if (game.rollsLeft <= 0 || game.isRolling || game.gameOver) return;
 
   game.isRolling = true;
   game.hasRolled = true;
   game.rollsLeft--;
 
-  // If first roll of turn, reset holds
   if (game.rollsLeft === 2) {
     game.held = [false, false, false, false, false];
   }
@@ -1059,7 +1232,6 @@ function rollDice() {
     }
   });
 
-  // Animate: cycle random values
   let frame = 0;
   const maxFrames = 10;
   const interval = setInterval(() => {
@@ -1088,7 +1260,6 @@ function buildScorecard() {
 
   let html = '';
 
-  // Header row
   html += '<thead><tr>';
   html += '<th class="cat-header"></th>';
   game.players.forEach((p, i) => {
@@ -1098,34 +1269,25 @@ function buildScorecard() {
 
   html += '<tbody>';
 
-  // 1. Teil section header
   html += sectionHeaderRow('1. Teil', nPlayers);
 
-  // Upper categories
   UPPER_CATS.forEach(cat => {
     html += categoryRow(cat.key, cat.icon ? `<span class="cat-icon">${cat.icon}</span>${cat.name}` : cat.name, nPlayers);
   });
 
-  // Zwischensumme
   html += summaryRow('zwischensumme', 'Zwischensumme', nPlayers);
-  // Bonus
   html += summaryRow('bonus', 'Bonus (ab 63 = 35)', nPlayers);
-  // Gesamtsumme 1. Teil
   html += totalRow('upperTotal', 'Gesamtsumme 1. Teil', nPlayers);
 
-  // 2. Teil section header
   html += sectionHeaderRow('2. Teil', nPlayers);
 
-  // Lower categories
   LOWER_CATS.forEach(cat => {
     html += categoryRow(cat.key, cat.name, nPlayers);
   });
 
-  // Gesamtsumme 2. Teil
   html += summaryRow('lowerTotal', 'Gesamtsumme 2. Teil', nPlayers);
-  // Gesamtsumme 1. Teil (repeated)
   html += summaryRow('upperTotalRepeat', 'Gesamtsumme 1. Teil', nPlayers);
-  // Endsumme
+
   html += `<tr class="final-row">`;
   html += `<td class="cat-col"><strong>Endsumme</strong></td>`;
   for (let i = 0; i < nPlayers; i++) {
@@ -1175,34 +1337,28 @@ function totalRow(key, label, nPlayers) {
 function renderScorecard() {
   const cp = game.currentPlayer;
 
-  // Player headers
   document.querySelectorAll('.player-header').forEach(th => {
     const pi = parseInt(th.dataset.player);
     th.classList.toggle('active', pi === cp && !game.gameOver);
   });
 
-  // Score cells
   document.querySelectorAll('.score-cell').forEach(td => {
     const cat = td.dataset.cat;
     const pi = parseInt(td.dataset.player);
     const player = game.players[pi];
     const scored = player.scores[cat];
 
-    // Reset classes
     td.className = 'score-cell';
     td.onclick = null;
 
-    // Highlight current player column
     if (pi === cp && !game.gameOver) {
       td.classList.add('active-player');
     }
 
     if (scored != null) {
-      // Already scored
       td.textContent = scored;
       td.classList.add('scored');
     } else if (pi === cp && game.hasRolled && !game.isRolling && !game.gameOver) {
-      // Show potential score
       const potential = calcScore(cat, game.dice);
       td.textContent = potential;
       td.classList.add('potential');
@@ -1213,7 +1369,6 @@ function renderScorecard() {
     }
   });
 
-  // Summary rows
   game.players.forEach((player, i) => {
     const upperSum = getUpperSum(player);
     const bonus = getBonus(player);
@@ -1238,7 +1393,7 @@ function setCell(summaryKey, playerIndex, value) {
   if (el) el.textContent = value;
 }
 
-// ===== Select a Category (Score) =====
+// ===== Select Category (Score) =====
 function selectCategory(cat) {
   if (game.isRolling || game.gameOver) return;
 
@@ -1248,19 +1403,16 @@ function selectCategory(cat) {
   const score = calcScore(cat, game.dice);
   player.scores[cat] = score;
 
-  // Flash animation
   const cell = document.querySelector(`.score-cell[data-cat="${cat}"][data-player="${game.currentPlayer}"]`);
   if (cell) {
     cell.classList.add('just-scored');
     setTimeout(() => cell.classList.remove('just-scored'), 600);
   }
 
-  // Kniffel toast
   if (cat === 'fuenfGleiche' && score === 50) {
     showKniffelToast();
   }
 
-  // Check if game is over
   const allFilled = game.players.every(p => getCategoriesFilled(p) === TOTAL_ROUNDS);
   if (allFilled) {
     game.gameOver = true;
@@ -1269,7 +1421,6 @@ function selectCategory(cat) {
     return;
   }
 
-  // Next player's turn
   advanceTurn();
   renderAll();
 }
@@ -1277,18 +1428,22 @@ function selectCategory(cat) {
 function advanceTurn() {
   game.currentPlayer = (game.currentPlayer + 1) % game.players.length;
 
-  // Skip players who are already done (shouldn't happen in normal play, but safety check)
   let attempts = 0;
   while (getCategoriesFilled(game.players[game.currentPlayer]) === TOTAL_ROUNDS && attempts < game.players.length) {
     game.currentPlayer = (game.currentPlayer + 1) % game.players.length;
     attempts++;
   }
 
-  // Reset turn state
-  game.dice = [0, 0, 0, 0, 0];
   game.held = [false, false, false, false, false];
   game.rollsLeft = 3;
   game.hasRolled = false;
+  game.manualConfirmed = false;
+
+  if (game.manualMode) {
+    game.dice = [1, 1, 1, 1, 1];
+  } else {
+    game.dice = [0, 0, 0, 0, 0];
+  }
 }
 
 // ===== Kniffel Toast =====
@@ -1340,33 +1495,56 @@ function renderAll() {
   const cp = game.players[game.currentPlayer];
   document.getElementById('current-player-name').textContent = cp.name;
 
-  // Roll button
-  const rollBtn = document.getElementById('btn-roll');
-  rollBtn.disabled = game.rollsLeft <= 0 || game.isRolling || game.gameOver;
-  rollBtn.textContent = game.rollsLeft === 3 ? 'WUERFELN' : `WUERFELN (${game.rollsLeft})`;
-
-  // Rolls remaining text
+  // Buttons: show/hide based on mode
+  const btnRoll = document.getElementById('btn-roll');
+  const btnConfirm = document.getElementById('btn-confirm');
+  const btnEditDice = document.getElementById('btn-edit-dice');
   const rollsText = document.getElementById('rolls-remaining');
-  if (game.gameOver) {
-    rollsText.textContent = 'Spiel beendet';
-  } else if (game.rollsLeft === 3) {
-    rollsText.textContent = '3 Wuerfe verfuegbar';
-  } else if (game.rollsLeft > 0) {
-    rollsText.textContent = `Noch ${game.rollsLeft} ${game.rollsLeft === 1 ? 'Wurf' : 'Wuerfe'}`;
-  } else {
-    rollsText.textContent = 'Keine Wuerfe mehr';
-  }
-
-  // Turn hint
   const hint = document.getElementById('turn-hint');
-  if (game.gameOver) {
-    hint.textContent = '';
-  } else if (!game.hasRolled) {
-    hint.textContent = 'Druecke WUERFELN\num zu starten';
-  } else if (game.rollsLeft > 0) {
-    hint.textContent = 'Tippe auf Wuerfel\num sie zu halten';
+
+  if (game.manualMode) {
+    // Manual mode
+    btnRoll.style.display = 'none';
+
+    if (game.manualConfirmed) {
+      btnConfirm.style.display = 'none';
+      btnEditDice.style.display = '';
+      rollsText.textContent = 'Werte eingetragen';
+      hint.textContent = 'Waehle eine Kategorie\nim Spielplan';
+    } else {
+      btnConfirm.style.display = '';
+      btnEditDice.style.display = 'none';
+      rollsText.textContent = 'Wuerfel antippen zum Aendern';
+      hint.textContent = 'Stelle die gewuerfelte\nAugenzahl ein und\ndruecke EINTRAGEN';
+    }
   } else {
-    hint.textContent = 'Waehle eine Kategorie\nim Spielplan';
+    // Digital mode
+    btnRoll.style.display = '';
+    btnConfirm.style.display = 'none';
+    btnEditDice.style.display = 'none';
+
+    btnRoll.disabled = game.rollsLeft <= 0 || game.isRolling || game.gameOver;
+    btnRoll.textContent = game.rollsLeft === 3 ? 'WUERFELN' : `WUERFELN (${game.rollsLeft})`;
+
+    if (game.gameOver) {
+      rollsText.textContent = 'Spiel beendet';
+    } else if (game.rollsLeft === 3) {
+      rollsText.textContent = '3 Wuerfe verfuegbar';
+    } else if (game.rollsLeft > 0) {
+      rollsText.textContent = `Noch ${game.rollsLeft} ${game.rollsLeft === 1 ? 'Wurf' : 'Wuerfe'}`;
+    } else {
+      rollsText.textContent = 'Keine Wuerfe mehr';
+    }
+
+    if (game.gameOver) {
+      hint.textContent = '';
+    } else if (!game.hasRolled) {
+      hint.textContent = 'Druecke WUERFELN\num zu starten';
+    } else if (game.rollsLeft > 0) {
+      hint.textContent = 'Tippe auf Wuerfel\num sie zu halten';
+    } else {
+      hint.textContent = 'Waehle eine Kategorie\nim Spielplan';
+    }
   }
 
   renderDice();
