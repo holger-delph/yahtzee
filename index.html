@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kniffel">
+  <title>Kniffel</title>
+  <style>
+    :root {
+      --bg: #1b5e20;
+      --bg-light: #2e7d32;
+      --card-bg: #ffffff;
+      --accent: #f9a825;
+      --accent-hover: #f57f17;
+      --accent-dark: #e65100;
+      --text: #212121;
+      --text-light: #616161;
+      --text-white: #ffffff;
+      --held-bg: #bbdefb;
+      --held-border: #1565c0;
+      --current-col: #e8f5e9;
+      --potential: #2e7d32;
+      --potential-bg: #f1f8e9;
+      --section-bg: #fff8e1;
+      --summary-bg: #f5f5f5;
+      --border: #bdbdbd;
+      --border-light: #e0e0e0;
+      --danger: #c62828;
+      --success: #2e7d32;
+      --dice-shadow: rgba(0,0,0,0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ===== Orientation Warning ===== */
+    #orientation-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      color: var(--text-white);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      text-align: center;
+      padding: 40px;
+    }
+    #orientation-warning .rotate-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+      animation: rotate-hint 2s ease-in-out infinite;
+    }
+    @keyframes rotate-hint {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(90deg); }
+    }
+    @media (orientation: portrait) {
+      #orientation-warning { display: flex; }
+      #setup-screen, #game-screen, #game-over-screen { display: none !important; }
+    }
+
+    /* ===== Setup Screen ===== */
+    #setup-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 20px;
+      background: radial-gradient(ellipse at center, #2e7d32 0%, #1b5e20 70%);
+    }
+
+    .setup-title {
+      font-size: 64px;
+      font-weight: 800;
+      color: var(--accent);
+      text-shadow: 2px 4px 8px rgba(0,0,0,0.4);
+      letter-spacing: 4px;
+      margin-bottom: 4px;
+    }
+
+    .setup-subtitle {
+      font-size: 18px;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 30px;
+      letter-spacing: 2px;
+    }
+
+    .setup-container {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 28px 36px;
+      width: 520px;
+      max-width: 90%;
+    }
+
+    .setup-container h2 {
+      color: var(--text-white);
+      font-size: 18px;
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+
+    .player-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .player-number {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 16px;
+      width: 24px;
+      text-align: center;
+    }
+
+    .player-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      color: var(--text-white);
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .player-row input::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+
+    .player-row input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-remove-player {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(198,40,40,0.7);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .btn-remove-player:active {
+      background: rgba(198,40,40,1);
+    }
+
+    .setup-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #333;
+    }
+
+    .btn-primary:active {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.2);
+      color: var(--text-white);
+    }
+
+    .btn-secondary:active {
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* ===== Game Screen ===== */
+    #game-screen {
+      display: none;
+      height: 100%;
+      flex-direction: row;
+      background: var(--bg);
+    }
+
+    /* --- Left Panel (Dice) --- */
+    .dice-panel {
+      width: 240px;
+      min-width: 240px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 10px;
+      background: radial-gradient(ellipse at center, #2e7d32 0%, #1b5e20 100%);
+      border-right: 2px solid rgba(0,0,0,0.3);
+    }
+
+    .game-info {
+      text-align: center;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+
+    .round-display {
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .current-player-name {
+      color: var(--accent);
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 2px;
+      text-shadow: 1px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .dice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0;
+      justify-items: center;
+    }
+
+    .dice-grid .die-wrapper:nth-child(5) {
+      grid-column: 1 / -1;
+    }
+
+    .die-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .die {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(145deg, #ffffff 0%, #f0f0f0 100%);
+      border-radius: 14px;
+      border: 3px solid #ccc;
+      position: relative;
+      box-shadow: 2px 4px 8px var(--dice-shadow);
+      transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    .die-wrapper.held .die {
+      background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
+      border-color: var(--held-border);
+      transform: translateY(4px);
+      box-shadow: 1px 2px 4px var(--dice-shadow);
+    }
+
+    .die-wrapper .hold-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: transparent;
+      margin-top: 3px;
+      height: 14px;
+      transition: color 0.15s;
+    }
+
+    .die-wrapper.held .hold-label {
+      color: var(--held-border);
+    }
+
+    .die.blank {
+      background: linear-gradient(145deg, #e0e0e0 0%, #cccccc 100%);
+      border-color: #aaa;
+    }
+
+    .pip {
+      width: 13px;
+      height: 13px;
+      background: #333;
+      border-radius: 50%;
+      position: absolute;
+      transform: translate(-50%, -50%);
+    }
+
+    .die-wrapper.held .pip {
+      background: #1565c0;
+    }
+
+    @keyframes die-roll {
+      0% { transform: rotate(0deg) scale(1); }
+      20% { transform: rotate(18deg) scale(0.92); }
+      40% { transform: rotate(-14deg) scale(1.05); }
+      60% { transform: rotate(8deg) scale(0.95); }
+      80% { transform: rotate(-4deg) scale(1.02); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+
+    .die.rolling {
+      animation: die-roll 0.4s ease;
+    }
+
+    .roll-section {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .btn-roll {
+      width: 180px;
+      padding: 14px 0;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
+      color: #333;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .btn-roll:active {
+      transform: scale(0.96);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .btn-roll:disabled {
+      background: #666;
+      color: #999;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .btn-roll:disabled:active {
+      transform: none;
+    }
+
+    .rolls-remaining {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    .turn-hint {
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      margin-top: 16px;
+      text-align: center;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    /* Kniffel celebration */
+    .kniffel-toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: var(--accent);
+      color: #333;
+      padding: 20px 40px;
+      border-radius: 20px;
+      font-size: 36px;
+      font-weight: 800;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .kniffel-toast.show {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    /* --- Right Panel (Scorecard) --- */
+    .scorecard-panel {
+      flex: 1;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 6px 8px;
+    }
+
+    .scorecard-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    .scorecard-table th,
+    .scorecard-table td {
+      border: 1px solid var(--border);
+      padding: 3px 6px;
+      text-align: center;
+      height: 30px;
+      vertical-align: middle;
+    }
+
+    /* Category name column */
+    .scorecard-table .cat-col {
+      text-align: left;
+      padding-left: 8px;
+      font-weight: 600;
+      background: var(--card-bg);
+      width: 170px;
+      min-width: 170px;
+    }
+
+    .scorecard-table .cat-icon {
+      display: inline-block;
+      width: 18px;
+      font-size: 15px;
+      text-align: center;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    /* Player header cells */
+    .scorecard-table th.player-header {
+      background: var(--bg-light);
+      color: var(--text-white);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 6px 4px;
+    }
+
+    .scorecard-table th.player-header.active {
+      background: var(--accent);
+      color: #333;
+    }
+
+    .scorecard-table th.cat-header {
+      background: var(--bg-light);
+      color: var(--text-white);
+      font-weight: 700;
+      font-size: 13px;
+      text-align: left;
+      padding-left: 8px;
+    }
+
+    /* Section header rows */
+    .section-header td {
+      background: var(--section-bg);
+      font-weight: 800;
+      font-size: 13px;
+      color: #5d4037;
+      letter-spacing: 1px;
+    }
+
+    /* Summary rows */
+    .summary-row td {
+      background: var(--summary-bg);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .summary-row .cat-col {
+      background: var(--summary-bg);
+    }
+
+    .total-row td {
+      background: #e8eaf6;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .total-row .cat-col {
+      background: #e8eaf6;
+    }
+
+    .final-row td {
+      background: #fff9c4;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .final-row .cat-col {
+      background: #fff9c4;
+    }
+
+    /* Score cells */
+    .score-cell {
+      background: var(--card-bg);
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .score-cell.active-player {
+      background: var(--current-col);
+    }
+
+    .score-cell.potential {
+      color: var(--potential);
+      font-weight: 400;
+      font-style: italic;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .score-cell.potential:active {
+      background: #c8e6c9;
+    }
+
+    .score-cell.potential.zero {
+      color: #bbb;
+    }
+
+    .score-cell.scored {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .score-cell.just-scored {
+      animation: score-flash 0.6s ease;
+    }
+
+    @keyframes score-flash {
+      0% { background: var(--accent); }
+      100% { background: var(--card-bg); }
+    }
+
+    .bonus-info {
+      font-size: 10px;
+      color: var(--text-light);
+      font-weight: 400;
+      display: block;
+    }
+
+    /* ===== Game Over Screen ===== */
+    #game-over-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 500;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .game-over-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 32px 48px;
+      text-align: center;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+    }
+
+    .game-over-card h1 {
+      font-size: 36px;
+      color: var(--accent-dark);
+      margin-bottom: 8px;
+    }
+
+    .winner-name {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--success);
+      margin-bottom: 20px;
+    }
+
+    .final-scores {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .final-score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: #f5f5f5;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+
+    .final-score-row.winner {
+      background: #e8f5e9;
+      border: 2px solid var(--success);
+    }
+
+    .final-score-row .rank {
+      font-weight: 800;
+      color: var(--text-light);
+      width: 30px;
+    }
+
+    .final-score-row.winner .rank {
+      color: var(--accent-dark);
+    }
+
+    .final-score-row .name {
+      flex: 1;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .final-score-row .score {
+      font-weight: 800;
+      font-size: 20px;
+    }
+
+    .btn-new-game {
+      margin-top: 8px;
+      padding: 14px 40px;
+      background: var(--success);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-new-game:active {
+      background: #1b5e20;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Orientation Warning -->
+<div id="orientation-warning">
+  <div class="rotate-icon">&#x1F4F1;</div>
+  <div>Bitte drehe dein iPad ins <strong>Querformat</strong></div>
+</div>
+
+<!-- Setup Screen -->
+<div id="setup-screen">
+  <div class="setup-title">KNIFFEL</div>
+  <div class="setup-subtitle">Das Wuerfelspiel</div>
+  <div class="setup-container">
+    <h2>Spieler</h2>
+    <div class="player-inputs" id="player-inputs"></div>
+    <div class="setup-buttons">
+      <button class="btn btn-secondary" id="btn-add-player">+ Spieler</button>
+      <button class="btn btn-primary" id="btn-start-game">Spiel starten</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Screen -->
+<div id="game-screen">
+  <!-- Left: Dice Panel -->
+  <div class="dice-panel">
+    <div class="game-info">
+      <div class="round-display" id="round-display">Runde 1 / 13</div>
+      <div class="current-player-name" id="current-player-name">-</div>
+    </div>
+    <div class="dice-grid" id="dice-grid"></div>
+    <div class="roll-section">
+      <button class="btn-roll" id="btn-roll">WUERFELN</button>
+      <div class="rolls-remaining" id="rolls-remaining"></div>
+    </div>
+    <div class="turn-hint" id="turn-hint"></div>
+  </div>
+  <!-- Right: Scorecard Panel -->
+  <div class="scorecard-panel">
+    <table class="scorecard-table" id="scorecard-table"></table>
+  </div>
+</div>
+
+<!-- Game Over Screen -->
+<div id="game-over-screen">
+  <div class="game-over-card">
+    <h1>Spiel beendet!</h1>
+    <div class="winner-name" id="winner-name"></div>
+    <div class="final-scores" id="final-scores"></div>
+    <button class="btn-new-game" id="btn-new-game">Neues Spiel</button>
+  </div>
+</div>
+
+<!-- Kniffel Toast -->
+<div class="kniffel-toast" id="kniffel-toast">KNIFFEL!</div>
+
+<script>
+/* ========================================
+   KNIFFEL - Game Logic
+   ======================================== */
+
+// ===== Category Definitions =====
+const UPPER_CATS = [
+  { key: 'einer',   name: 'Einer',   icon: '\u2680' },
+  { key: 'zweier',  name: 'Zweier',  icon: '\u2681' },
+  { key: 'dreier',  name: 'Dreier',  icon: '\u2682' },
+  { key: 'vierer',  name: 'Vierer',  icon: '\u2683' },
+  { key: 'fuenfer', name: 'Fuenfer', icon: '\u2684' },
+  { key: 'sechser', name: 'Sechser', icon: '\u2685' },
+];
+
+const LOWER_CATS = [
+  { key: 'einPaar',        name: '1 Paar' },
+  { key: 'zweiPaar',       name: '2 Paar' },
+  { key: 'dreiGleiche',    name: 'Drei Gleiche' },
+  { key: 'vierGleiche',    name: 'Vier Gleiche' },
+  { key: 'vollesHaus',     name: 'Volles Haus' },
+  { key: 'kleineStrasse',  name: 'Kleine Strasse' },
+  { key: 'grosseStrasse',  name: 'Grosse Strasse' },
+  { key: 'fuenfGleiche',   name: '5 x gleiche Augenzahl' },
+  { key: 'chance',         name: 'Chance' },
+];
+
+const ALL_CATS = [...UPPER_CATS.map(c => c.key), ...LOWER_CATS.map(c => c.key)];
+const TOTAL_ROUNDS = 13; // 13 categories = 13 rounds
+
+// ===== Game State =====
+let game = {
+  players: [],          // [{ name, scores: { cat_key: number|null } }]
+  currentPlayer: 0,
+  dice: [0, 0, 0, 0, 0],
+  held: [false, false, false, false, false],
+  rollsLeft: 3,
+  hasRolled: false,     // has the current player rolled at least once this turn?
+  isRolling: false,     // animation in progress?
+  gameOver: false,
+};
+
+// ===== Pip Positions (percentage-based) =====
+const PIP_POSITIONS = {
+  1: [{ top: '50%', left: '50%' }],
+  2: [{ top: '25%', left: '75%' }, { top: '75%', left: '25%' }],
+  3: [{ top: '25%', left: '75%' }, { top: '50%', left: '50%' }, { top: '75%', left: '25%' }],
+  4: [{ top: '25%', left: '25%' }, { top: '25%', left: '75%' }, { top: '75%', left: '25%' }, { top: '75%', left: '75%' }],
+  5: [{ top: '25%', left: '25%' }, { top: '25%', left: '75%' }, { top: '50%', left: '50%' }, { top: '75%', left: '25%' }, { top: '75%', left: '75%' }],
+  6: [{ top: '25%', left: '25%' }, { top: '25%', left: '75%' }, { top: '50%', left: '25%' }, { top: '50%', left: '75%' }, { top: '75%', left: '25%' }, { top: '75%', left: '75%' }],
+};
+
+// ===== Scoring Functions =====
+function calcScore(cat, dice) {
+  const counts = [0, 0, 0, 0, 0, 0];
+  let sum = 0;
+  for (const d of dice) {
+    counts[d - 1]++;
+    sum += d;
+  }
+
+  switch (cat) {
+    case 'einer':   return counts[0] * 1;
+    case 'zweier':  return counts[1] * 2;
+    case 'dreier':  return counts[2] * 3;
+    case 'vierer':  return counts[3] * 4;
+    case 'fuenfer': return counts[4] * 5;
+    case 'sechser': return counts[5] * 6;
+
+    case 'einPaar': {
+      for (let v = 6; v >= 1; v--) {
+        if (counts[v - 1] >= 2) return v * 2;
+      }
+      return 0;
+    }
+
+    case 'zweiPaar': {
+      const pairs = [];
+      for (let v = 6; v >= 1; v--) {
+        if (counts[v - 1] >= 2) pairs.push(v);
+      }
+      return pairs.length >= 2 ? pairs[0] * 2 + pairs[1] * 2 : 0;
+    }
+
+    case 'dreiGleiche': {
+      for (let v = 1; v <= 6; v++) {
+        if (counts[v - 1] >= 3) return sum;
+      }
+      return 0;
+    }
+
+    case 'vierGleiche': {
+      for (let v = 1; v <= 6; v++) {
+        if (counts[v - 1] >= 4) return sum;
+      }
+      return 0;
+    }
+
+    case 'vollesHaus': {
+      let three = false, two = false;
+      for (let v = 1; v <= 6; v++) {
+        if (counts[v - 1] === 3) three = true;
+        if (counts[v - 1] === 2) two = true;
+      }
+      return (three && two) ? 25 : 0;
+    }
+
+    case 'kleineStrasse': {
+      const u = new Set(dice);
+      const seqs = [[1,2,3,4],[2,3,4,5],[3,4,5,6]];
+      for (const s of seqs) {
+        if (s.every(v => u.has(v))) return 30;
+      }
+      return 0;
+    }
+
+    case 'grosseStrasse': {
+      const sorted = [...dice].sort().join('');
+      return (sorted === '12345' || sorted === '23456') ? 40 : 0;
+    }
+
+    case 'fuenfGleiche': {
+      for (let v = 1; v <= 6; v++) {
+        if (counts[v - 1] === 5) return 50;
+      }
+      return 0;
+    }
+
+    case 'chance': return sum;
+
+    default: return 0;
+  }
+}
+
+function getUpperSum(player) {
+  let s = 0;
+  for (const c of UPPER_CATS) {
+    const v = player.scores[c.key];
+    if (v != null) s += v;
+  }
+  return s;
+}
+
+function getBonus(player) {
+  return getUpperSum(player) >= 63 ? 35 : 0;
+}
+
+function getUpperTotal(player) {
+  return getUpperSum(player) + getBonus(player);
+}
+
+function getLowerSum(player) {
+  let s = 0;
+  for (const c of LOWER_CATS) {
+    const v = player.scores[c.key];
+    if (v != null) s += v;
+  }
+  return s;
+}
+
+function getFinalTotal(player) {
+  return getUpperTotal(player) + getLowerSum(player);
+}
+
+function getCategoriesFilled(player) {
+  return ALL_CATS.filter(k => player.scores[k] != null).length;
+}
+
+function getCurrentRound() {
+  const min = Math.min(...game.players.map(p => getCategoriesFilled(p)));
+  return Math.min(min + 1, TOTAL_ROUNDS);
+}
+
+// ===== Setup Screen =====
+function initSetup() {
+  const container = document.getElementById('player-inputs');
+  container.innerHTML = '';
+
+  const defaultNames = ['Spieler 1', 'Spieler 2'];
+  if (!window._setupPlayers) {
+    window._setupPlayers = [...defaultNames];
+  }
+
+  window._setupPlayers.forEach((name, i) => {
+    addPlayerInput(name, i);
+  });
+
+  updateSetupButtons();
+}
+
+function addPlayerInput(name, index) {
+  const container = document.getElementById('player-inputs');
+  const row = document.createElement('div');
+  row.className = 'player-row';
+  row.innerHTML = `
+    <span class="player-number">${index + 1}.</span>
+    <input type="text" value="${name}" placeholder="Name eingeben" maxlength="12" data-index="${index}">
+    <button class="btn-remove-player" data-index="${index}">&times;</button>
+  `;
+  container.appendChild(row);
+
+  row.querySelector('input').addEventListener('input', (e) => {
+    window._setupPlayers[e.target.dataset.index] = e.target.value;
+  });
+
+  row.querySelector('.btn-remove-player').addEventListener('click', (e) => {
+    const idx = parseInt(e.currentTarget.dataset.index);
+    if (window._setupPlayers.length > 1) {
+      window._setupPlayers.splice(idx, 1);
+      initSetup();
+    }
+  });
+}
+
+function updateSetupButtons() {
+  const addBtn = document.getElementById('btn-add-player');
+  addBtn.style.display = window._setupPlayers.length >= 6 ? 'none' : '';
+}
+
+document.getElementById('btn-add-player').addEventListener('click', () => {
+  if (window._setupPlayers.length < 6) {
+    window._setupPlayers.push(`Spieler ${window._setupPlayers.length + 1}`);
+    initSetup();
+  }
+});
+
+document.getElementById('btn-start-game').addEventListener('click', () => {
+  const names = window._setupPlayers.map((n, i) => n.trim() || `Spieler ${i + 1}`);
+  startGame(names);
+});
+
+// ===== Game Initialization =====
+function startGame(playerNames) {
+  game = {
+    players: playerNames.map(name => ({
+      name,
+      scores: {},
+    })),
+    currentPlayer: 0,
+    dice: [0, 0, 0, 0, 0],
+    held: [false, false, false, false, false],
+    rollsLeft: 3,
+    hasRolled: false,
+    isRolling: false,
+    gameOver: false,
+  };
+
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'flex';
+  document.getElementById('game-over-screen').style.display = 'none';
+
+  buildDice();
+  buildScorecard();
+  renderAll();
+}
+
+// ===== Dice Rendering =====
+function buildDice() {
+  const grid = document.getElementById('dice-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'die-wrapper';
+    wrapper.dataset.index = i;
+    wrapper.innerHTML = `
+      <div class="die blank" data-index="${i}"></div>
+      <span class="hold-label">HALTEN</span>
+    `;
+    wrapper.addEventListener('click', () => toggleHold(i));
+    grid.appendChild(wrapper);
+  }
+}
+
+function renderDice() {
+  const wrappers = document.querySelectorAll('.die-wrapper');
+  wrappers.forEach((w, i) => {
+    const die = w.querySelector('.die');
+    const val = game.dice[i];
+    const isHeld = game.held[i];
+
+    w.classList.toggle('held', isHeld);
+
+    // Clear pips
+    die.innerHTML = '';
+
+    if (!game.hasRolled && val === 0) {
+      die.classList.add('blank');
+      return;
+    }
+
+    die.classList.remove('blank');
+
+    // Add pips
+    const positions = PIP_POSITIONS[val] || [];
+    positions.forEach(pos => {
+      const pip = document.createElement('div');
+      pip.className = 'pip';
+      pip.style.top = pos.top;
+      pip.style.left = pos.left;
+      die.appendChild(pip);
+    });
+  });
+}
+
+function toggleHold(index) {
+  if (!game.hasRolled || game.rollsLeft === 0 || game.isRolling) return;
+  game.held[index] = !game.held[index];
+  renderDice();
+}
+
+// ===== Roll Dice =====
+function rollDice() {
+  if (game.rollsLeft <= 0 || game.isRolling || game.gameOver) return;
+
+  game.isRolling = true;
+  game.hasRolled = true;
+  game.rollsLeft--;
+
+  // If first roll of turn, reset holds
+  if (game.rollsLeft === 2) {
+    game.held = [false, false, false, false, false];
+  }
+
+  const diceEls = document.querySelectorAll('.die');
+  diceEls.forEach((el, i) => {
+    if (!game.held[i]) {
+      el.classList.remove('blank');
+      el.classList.add('rolling');
+    }
+  });
+
+  // Animate: cycle random values
+  let frame = 0;
+  const maxFrames = 10;
+  const interval = setInterval(() => {
+    for (let i = 0; i < 5; i++) {
+      if (!game.held[i]) {
+        game.dice[i] = Math.floor(Math.random() * 6) + 1;
+      }
+    }
+    renderDice();
+    frame++;
+    if (frame >= maxFrames) {
+      clearInterval(interval);
+      diceEls.forEach(el => el.classList.remove('rolling'));
+      game.isRolling = false;
+      renderAll();
+    }
+  }, 50);
+}
+
+document.getElementById('btn-roll').addEventListener('click', rollDice);
+
+// ===== Scorecard Building =====
+function buildScorecard() {
+  const table = document.getElementById('scorecard-table');
+  const nPlayers = game.players.length;
+
+  let html = '';
+
+  // Header row
+  html += '<thead><tr>';
+  html += '<th class="cat-header"></th>';
+  game.players.forEach((p, i) => {
+    html += `<th class="player-header" data-player="${i}">${escHtml(p.name)}</th>`;
+  });
+  html += '</tr></thead>';
+
+  html += '<tbody>';
+
+  // 1. Teil section header
+  html += sectionHeaderRow('1. Teil', nPlayers);
+
+  // Upper categories
+  UPPER_CATS.forEach(cat => {
+    html += categoryRow(cat.key, cat.icon ? `<span class="cat-icon">${cat.icon}</span>${cat.name}` : cat.name, nPlayers);
+  });
+
+  // Zwischensumme
+  html += summaryRow('zwischensumme', 'Zwischensumme', nPlayers);
+  // Bonus
+  html += summaryRow('bonus', 'Bonus (ab 63 = 35)', nPlayers);
+  // Gesamtsumme 1. Teil
+  html += totalRow('upperTotal', 'Gesamtsumme 1. Teil', nPlayers);
+
+  // 2. Teil section header
+  html += sectionHeaderRow('2. Teil', nPlayers);
+
+  // Lower categories
+  LOWER_CATS.forEach(cat => {
+    html += categoryRow(cat.key, cat.name, nPlayers);
+  });
+
+  // Gesamtsumme 2. Teil
+  html += summaryRow('lowerTotal', 'Gesamtsumme 2. Teil', nPlayers);
+  // Gesamtsumme 1. Teil (repeated)
+  html += summaryRow('upperTotalRepeat', 'Gesamtsumme 1. Teil', nPlayers);
+  // Endsumme
+  html += `<tr class="final-row">`;
+  html += `<td class="cat-col"><strong>Endsumme</strong></td>`;
+  for (let i = 0; i < nPlayers; i++) {
+    html += `<td data-summary="finalTotal" data-player="${i}"></td>`;
+  }
+  html += '</tr>';
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function sectionHeaderRow(label, nPlayers) {
+  return `<tr class="section-header"><td class="cat-col" colspan="${nPlayers + 1}">${label}</td></tr>`;
+}
+
+function categoryRow(key, label, nPlayers) {
+  let row = `<tr data-cat="${key}">`;
+  row += `<td class="cat-col">${label}</td>`;
+  for (let i = 0; i < nPlayers; i++) {
+    row += `<td class="score-cell" data-cat="${key}" data-player="${i}"></td>`;
+  }
+  row += '</tr>';
+  return row;
+}
+
+function summaryRow(key, label, nPlayers) {
+  let row = `<tr class="summary-row">`;
+  row += `<td class="cat-col">${label}</td>`;
+  for (let i = 0; i < nPlayers; i++) {
+    row += `<td data-summary="${key}" data-player="${i}"></td>`;
+  }
+  row += '</tr>';
+  return row;
+}
+
+function totalRow(key, label, nPlayers) {
+  let row = `<tr class="total-row">`;
+  row += `<td class="cat-col">${label}</td>`;
+  for (let i = 0; i < nPlayers; i++) {
+    row += `<td data-summary="${key}" data-player="${i}"></td>`;
+  }
+  row += '</tr>';
+  return row;
+}
+
+// ===== Scorecard Rendering =====
+function renderScorecard() {
+  const cp = game.currentPlayer;
+
+  // Player headers
+  document.querySelectorAll('.player-header').forEach(th => {
+    const pi = parseInt(th.dataset.player);
+    th.classList.toggle('active', pi === cp && !game.gameOver);
+  });
+
+  // Score cells
+  document.querySelectorAll('.score-cell').forEach(td => {
+    const cat = td.dataset.cat;
+    const pi = parseInt(td.dataset.player);
+    const player = game.players[pi];
+    const scored = player.scores[cat];
+
+    // Reset classes
+    td.className = 'score-cell';
+    td.onclick = null;
+
+    // Highlight current player column
+    if (pi === cp && !game.gameOver) {
+      td.classList.add('active-player');
+    }
+
+    if (scored != null) {
+      // Already scored
+      td.textContent = scored;
+      td.classList.add('scored');
+    } else if (pi === cp && game.hasRolled && !game.isRolling && !game.gameOver) {
+      // Show potential score
+      const potential = calcScore(cat, game.dice);
+      td.textContent = potential;
+      td.classList.add('potential');
+      if (potential === 0) td.classList.add('zero');
+      td.onclick = () => selectCategory(cat);
+    } else {
+      td.textContent = '';
+    }
+  });
+
+  // Summary rows
+  game.players.forEach((player, i) => {
+    const upperSum = getUpperSum(player);
+    const bonus = getBonus(player);
+    const upperTotal = getUpperTotal(player);
+    const lowerTotal = getLowerSum(player);
+    const finalTotal = getFinalTotal(player);
+
+    const upperFilled = UPPER_CATS.some(c => player.scores[c.key] != null);
+    const lowerFilled = LOWER_CATS.some(c => player.scores[c.key] != null);
+
+    setCell('zwischensumme', i, upperFilled ? upperSum : '');
+    setCell('bonus', i, upperFilled ? (upperSum >= 63 ? '35' : `${upperSum}/63`) : '');
+    setCell('upperTotal', i, upperFilled ? upperTotal : '');
+    setCell('lowerTotal', i, lowerFilled ? lowerTotal : '');
+    setCell('upperTotalRepeat', i, upperFilled ? upperTotal : '');
+    setCell('finalTotal', i, (upperFilled || lowerFilled) ? finalTotal : '');
+  });
+}
+
+function setCell(summaryKey, playerIndex, value) {
+  const el = document.querySelector(`[data-summary="${summaryKey}"][data-player="${playerIndex}"]`);
+  if (el) el.textContent = value;
+}
+
+// ===== Select a Category (Score) =====
+function selectCategory(cat) {
+  if (game.isRolling || game.gameOver) return;
+
+  const player = game.players[game.currentPlayer];
+  if (player.scores[cat] != null) return;
+
+  const score = calcScore(cat, game.dice);
+  player.scores[cat] = score;
+
+  // Flash animation
+  const cell = document.querySelector(`.score-cell[data-cat="${cat}"][data-player="${game.currentPlayer}"]`);
+  if (cell) {
+    cell.classList.add('just-scored');
+    setTimeout(() => cell.classList.remove('just-scored'), 600);
+  }
+
+  // Kniffel toast
+  if (cat === 'fuenfGleiche' && score === 50) {
+    showKniffelToast();
+  }
+
+  // Check if game is over
+  const allFilled = game.players.every(p => getCategoriesFilled(p) === TOTAL_ROUNDS);
+  if (allFilled) {
+    game.gameOver = true;
+    renderAll();
+    setTimeout(showGameOver, 800);
+    return;
+  }
+
+  // Next player's turn
+  advanceTurn();
+  renderAll();
+}
+
+function advanceTurn() {
+  game.currentPlayer = (game.currentPlayer + 1) % game.players.length;
+
+  // Skip players who are already done (shouldn't happen in normal play, but safety check)
+  let attempts = 0;
+  while (getCategoriesFilled(game.players[game.currentPlayer]) === TOTAL_ROUNDS && attempts < game.players.length) {
+    game.currentPlayer = (game.currentPlayer + 1) % game.players.length;
+    attempts++;
+  }
+
+  // Reset turn state
+  game.dice = [0, 0, 0, 0, 0];
+  game.held = [false, false, false, false, false];
+  game.rollsLeft = 3;
+  game.hasRolled = false;
+}
+
+// ===== Kniffel Toast =====
+function showKniffelToast() {
+  const toast = document.getElementById('kniffel-toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1500);
+}
+
+// ===== Game Over =====
+function showGameOver() {
+  const results = game.players.map((p, i) => ({
+    name: p.name,
+    score: getFinalTotal(p),
+    index: i,
+  })).sort((a, b) => b.score - a.score);
+
+  document.getElementById('winner-name').textContent = `${results[0].name} gewinnt!`;
+
+  const container = document.getElementById('final-scores');
+  container.innerHTML = '';
+  results.forEach((r, rank) => {
+    const row = document.createElement('div');
+    row.className = 'final-score-row' + (rank === 0 ? ' winner' : '');
+    row.innerHTML = `
+      <span class="rank">${rank + 1}.</span>
+      <span class="name">${escHtml(r.name)}</span>
+      <span class="score">${r.score}</span>
+    `;
+    container.appendChild(row);
+  });
+
+  document.getElementById('game-over-screen').style.display = 'flex';
+}
+
+document.getElementById('btn-new-game').addEventListener('click', () => {
+  document.getElementById('game-over-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+  initSetup();
+});
+
+// ===== Render All =====
+function renderAll() {
+  // Round display
+  document.getElementById('round-display').textContent = `Runde ${getCurrentRound()} / ${TOTAL_ROUNDS}`;
+
+  // Current player
+  const cp = game.players[game.currentPlayer];
+  document.getElementById('current-player-name').textContent = cp.name;
+
+  // Roll button
+  const rollBtn = document.getElementById('btn-roll');
+  rollBtn.disabled = game.rollsLeft <= 0 || game.isRolling || game.gameOver;
+  rollBtn.textContent = game.rollsLeft === 3 ? 'WUERFELN' : `WUERFELN (${game.rollsLeft})`;
+
+  // Rolls remaining text
+  const rollsText = document.getElementById('rolls-remaining');
+  if (game.gameOver) {
+    rollsText.textContent = 'Spiel beendet';
+  } else if (game.rollsLeft === 3) {
+    rollsText.textContent = '3 Wuerfe verfuegbar';
+  } else if (game.rollsLeft > 0) {
+    rollsText.textContent = `Noch ${game.rollsLeft} ${game.rollsLeft === 1 ? 'Wurf' : 'Wuerfe'}`;
+  } else {
+    rollsText.textContent = 'Keine Wuerfe mehr';
+  }
+
+  // Turn hint
+  const hint = document.getElementById('turn-hint');
+  if (game.gameOver) {
+    hint.textContent = '';
+  } else if (!game.hasRolled) {
+    hint.textContent = 'Druecke WUERFELN\num zu starten';
+  } else if (game.rollsLeft > 0) {
+    hint.textContent = 'Tippe auf Wuerfel\num sie zu halten';
+  } else {
+    hint.textContent = 'Waehle eine Kategorie\nim Spielplan';
+  }
+
+  renderDice();
+  renderScorecard();
+}
+
+// ===== Helpers =====
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ===== Init =====
+initSetup();
+</script>
+</body>
+</html>
