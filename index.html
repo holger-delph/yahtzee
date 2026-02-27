@@ -1510,12 +1510,12 @@ function renderAll() {
       btnConfirm.style.display = 'none';
       btnEditDice.style.display = '';
       rollsText.textContent = 'Werte eingetragen';
-      hint.textContent = 'Waehle eine Kategorie\nim Spielplan';
+      hint.textContent = 'Wähle eine Kategorie\nim Spielplan';
     } else {
       btnConfirm.style.display = '';
       btnEditDice.style.display = 'none';
-      rollsText.textContent = 'Wuerfel antippen zum Aendern';
-      hint.textContent = 'Stelle die gewuerfelte\nAugenzahl ein und\ndruecke EINTRAGEN';
+      rollsText.textContent = 'Würfel antippen zum Aendern';
+      hint.textContent = 'Stelle die gewürfelte\nAugenzahl ein und\ndrücke EINTRAGEN';
     }
   } else {
     // Digital mode
@@ -1524,26 +1524,26 @@ function renderAll() {
     btnEditDice.style.display = 'none';
 
     btnRoll.disabled = game.rollsLeft <= 0 || game.isRolling || game.gameOver;
-    btnRoll.textContent = game.rollsLeft === 3 ? 'WUERFELN' : `WUERFELN (${game.rollsLeft})`;
+    btnRoll.textContent = game.rollsLeft === 3 ? 'WÜRFELN' : `WÜRFELN (${game.rollsLeft})`;
 
     if (game.gameOver) {
       rollsText.textContent = 'Spiel beendet';
     } else if (game.rollsLeft === 3) {
-      rollsText.textContent = '3 Wuerfe verfuegbar';
+      rollsText.textContent = '3 Würfe verfuegbar';
     } else if (game.rollsLeft > 0) {
-      rollsText.textContent = `Noch ${game.rollsLeft} ${game.rollsLeft === 1 ? 'Wurf' : 'Wuerfe'}`;
+      rollsText.textContent = `Noch ${game.rollsLeft} ${game.rollsLeft === 1 ? 'Wurf' : 'Würfe'}`;
     } else {
-      rollsText.textContent = 'Keine Wuerfe mehr';
+      rollsText.textContent = 'Keine Würfe mehr';
     }
 
     if (game.gameOver) {
       hint.textContent = '';
     } else if (!game.hasRolled) {
-      hint.textContent = 'Druecke WUERFELN\num zu starten';
+      hint.textContent = 'Druecke WÜRFELN\num zu starten';
     } else if (game.rollsLeft > 0) {
-      hint.textContent = 'Tippe auf Wuerfel\num sie zu halten';
+      hint.textContent = 'Tippe auf Würfel\num sie zu halten';
     } else {
-      hint.textContent = 'Waehle eine Kategorie\nim Spielplan';
+      hint.textContent = 'Wähle eine Kategorie\nim Spielplan';
     }
   }
 
