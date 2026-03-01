@@ -1044,7 +1044,9 @@ function addPlayerInput(name, index) {
     <button class="btn-remove-player" data-index="${index}">&times;</button>
   `;
   container.appendChild(row);
-  row.querySelector('input').addEventListener('input', (e) => {
+  const input = row.querySelector('input');
+  input.addEventListener('focus', (e) => { e.target.select(); });
+  input.addEventListener('input', (e) => {
     window._setupPlayers[e.target.dataset.index] = e.target.value;
   });
   row.querySelector('.btn-remove-player').addEventListener('click', (e) => {
